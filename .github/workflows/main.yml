@@ -1,23 +1,26 @@
 name: Update Data
 on:
   schedule:
-    - cron: '0 0 * * *' # Jalan otomatis setiap jam 12 malam
-  workflow_dispatch: # Bisa dijalankan manual pakai tombol
+    - cron: '0 0 * * *' # Jalan tiap jam 12 malam
+  workflow_dispatch:
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update JSON
-        run: |
-          # Di sini nanti robot akan melakukan scraping. 
-          # Sementara kita simulasi update tanggal saja.
-          echo "{\"last_updated\": \"$(date)\", \"gold_price\": 1250000}" > data.json
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+      - name: Run Scraper
+        run: python scraper.py
       - name: Commit and Push
         run: |
           git config user.name "github-actions"
           git config user.email "action@github.com"
           git add data.json
-          git commit -m "Robot update data" || exit 0
+          git commit -m "Robot update data emas" || exit 0
           git push
