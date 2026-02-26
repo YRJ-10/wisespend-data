@@ -4,23 +4,37 @@ import json
 from datetime import datetime
 
 def get_gold_price():
-    # Contoh ambil dari situs harga-emas.org (Bisa diganti sesuai kebutuhan)
     url = "https://www.harga-emas.org/"
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     
-    # Mencari angka harga emas (logika scraping sederhana)
-    price_text = soup.find("td", {"style": "font-weight:bold; color:#000000;"}).text
-    # Bersihkan teks jadi angka (misal: 1.250.000 -> 1250000)
-    price = int(''.join(filter(str.isdigit, price_text)))
-    return price
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Mencari angka di dalam tabel harga emas terbaru
+        # Kita cari teks yang mengandung "gram" karena biasanya harga per gram ada di sana
+        rows = soup.find_all("tr")
+        for row in rows:
+            if "gram" in row.text.lower():
+                cells = row.find_all("td")
+                for cell in cells:
+                    digits = ''.join(filter(str.isdigit, cell.text))
+                    if len(digits) >= 6: # Harga emas biasanya 6-7 digit (jutaan)
+                        return int(digits)
+        
+        # Jika cara di atas gagal, coba cara cadangan (default)
+        return 1250000 
+    except Exception as e:
+        print(f"Error scraping: {e}")
+        return 1250000 # Return harga terakhir jika gagal agar file tidak rusak
 
 # Update data.json
 data = {
     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     "gold_price": get_gold_price(),
-    "inflation": 0.03, # Bisa diset manual atau scraping juga
+    "inflation": 0.03,
     "sbn_rate": 0.06
 }
 
