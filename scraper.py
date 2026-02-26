@@ -19,14 +19,15 @@ def get_finance_data():
     except:
         data['btc_idr'] = "Error"
 
-    # 3. Ambil Inflasi Indonesia (World Bank)
+    # 3. Ambil Inflasi Indonesia (World Bank) - Ambil 5 data terbaru untuk cari yang tidak Null
     try:
-        res_inflasi = requests.get("https://api.worldbank.org/v2/country/ID/indicator/FP.CPI.TOTL.ZG?format=json&per_page=1")
-        data['inflation_idr'] = round(res_inflasi.json()[1][0]['value'], 2)
+        res_inflasi = requests.get("https://api.worldbank.org/v2/country/ID/indicator/FP.CPI.TOTL.ZG?format=json&per_page=5")
+        inflation_list = res_inflasi.json()[1]
+        # Cari data terbaru yang nilainya bukan None
+        latest_val = next(item['value'] for item in inflation_list if item['value'] is not None)
+        data['inflation_idr'] = round(latest_val, 2)
     except:
         data['inflation_idr'] = "Error"
-
-    data['last_update'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     # Simpan ke data.json
     with open('data.json', 'w') as f:
